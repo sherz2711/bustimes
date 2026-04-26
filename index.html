@@ -1,0 +1,144 @@
+import { useState, useEffect } from “react”;
+
+const STOPS = [
+{ id:1, name:“High Street”, stop:“Stop CH1”, dist:80,
+sv:[{r:“1”,t:“Greenstead”,f:12},{r:“2”,t:“Mile End”,f:15},{r:“7”,t:“North Station”,f:10},{r:“X1”,t:“Ipswich”,f:30}]},
+{ id:2, name:“St Botolphs Street”, stop:“Stop CB”, dist:140,
+sv:[{r:“65”,t:“University of Essex”,f:15},{r:“66”,t:“Wivenhoe”,f:20},{r:“7”,t:“Town Centre”,f:10},{r:“8”,t:“Shrub End”,f:12}]},
+{ id:3, name:“Middleborough”, stop:“Stop CM”, dist:60,
+sv:[{r:“74”,t:“Stanway”,f:20},{r:“75”,t:“Tiptree”,f:30},{r:“11”,t:“Mersea Road”,f:20},{r:“2”,t:“Town Centre”,f:15}]},
+{ id:4, name:“North Station Road”, stop:“Stop CN”, dist:320,
+sv:[{r:“X22”,t:“Braintree”,f:60},{r:“1”,t:“Town Centre”,f:12},{r:“70”,t:“Halstead”,f:45}]},
+{ id:5, name:“Queen Street”, stop:“Stop CQ”, dist:210,
+sv:[{r:“2”,t:“Greenstead”,f:15},{r:“62”,t:“Clacton-on-Sea”,f:30},{r:“7”,t:“North Station”,f:10}]},
+{ id:6, name:“Balkerne Hill”, stop:“Stop BK”, dist:390,
+sv:[{r:“74”,t:“Town Centre”,f:20},{r:“75”,t:“Town Centre”,f:30},{r:“X1”,t:“Colchester”,f:30}]},
+];
+
+function getDeps(sv, now) {
+const m = now.getMinutes() + now.getSeconds() / 60;
+const res = [];
+sv.forEach(({ r, t, f }) => {
+for (let i = 0; i < 4; i++) {
+const w = Math.round((f - (m % f) + i * f + (r.charCodeAt(0) % f)) % (f * 4));
+if (w >= 0 && w <= 90) res.push({ r, t, w });
+}
+});
+return res.sort((a, b) => a.w - b.w).slice(0, 6);
+}
+
+function Badge({ mins }) {
+const due = mins <= 1;
+const soon = mins <= 10;
+const bg = due ? “#14532d” : soon ? “#451a03” : “#1e293b”;
+const col = due ? “#4ade80” : soon ? “#fbbf24” : “#94a3b8”;
+return (
+<span style={{ background: bg, color: col, fontFamily: “monospace”, fontSize: 13, fontWeight: 700, padding: “5px 11px”, borderRadius: 8, minWidth: 64, textAlign: “center”, display: “inline-block” }}>
+{due ? “Due” : mins === 1 ? “1 min” : `${mins} min`}
+</span>
+);
+}
+
+export default function App() {
+const [now, setNow] = useState(new Date());
+const [openId, setOpenId] = useState(3);
+
+useEffect(() => {
+const t = setInterval(() => setNow(new Date()), 10000);
+return () => clearInterval(t);
+}, []);
+
+const hh = String(now.getHours()).padStart(2, “0”);
+const mm = String(now.getMinutes()).padStart(2, “0”);
+
+return (
+<div style={{ background: “#080d18”, minHeight: “100vh”, color: “#e8edf5”, fontFamily: “-apple-system, BlinkMacSystemFont, sans-serif”, padding: “16px 12px 60px” }}>
+
+```
+  {/* Header */}
+  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+    <div style={{ width: 46, height: 46, background: "#00e5ff", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>
+      🚌
+    </div>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>
+        Bus<span style={{ color: "#00e5ff" }}>Tracker</span>
+      </div>
+      <div style={{ fontSize: 10, color: "#475569", fontFamily: "monospace", marginTop: 1 }}>
+        COLCHESTER · LIVE DEPARTURES
+      </div>
+    </div>
+    <div style={{ fontFamily: "monospace", fontSize: 22, color: "#00e5ff", fontWeight: 700 }}>
+      {hh}:{mm}
+    </div>
+  </div>
+
+  {/* Location pill */}
+  <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#475569", fontFamily: "monospace" }}>
+    📍 Middleborough, Colchester CO1 · 6 stops within 400m
+  </div>
+
+  {/* Section label */}
+  <div style={{ fontSize: 10, color: "#334155", fontFamily: "monospace", textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>
+    6 stops nearby
+  </div>
+
+  {/* Stop cards */}
+  {STOPS.map((stop) => {
+    const isOpen = openId === stop.id;
+    const deps = getDeps(stop.sv, now);
+    return (
+      <div key={stop.id} style={{ background: "#0f172a", border: `1px solid ${isOpen ? "#00e5ff33" : "#1e293b"}`, borderRadius: 14, marginBottom: 10, overflow: "hidden", transition: "border-color 0.2s" }}>
+
+        {/* Stop header */}
+        <div
+          onClick={() => setOpenId(isOpen ? null : stop.id)}
+          style={{ display: "flex", alignItems: "center", gap: 11, padding: "14px 14px", cursor: "pointer", WebkitTapHighlightColor: "transparent", userSelect: "none" }}
+        >
+          <div style={{ background: isOpen ? "#00e5ff" : "#1e293b", color: isOpen ? "#000" : "#00e5ff", fontFamily: "monospace", fontSize: 9, fontWeight: 700, padding: "4px 7px", borderRadius: 5, flexShrink: 0, transition: "all 0.2s", border: "1px solid #00e5ff33" }}>
+            BUS
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {stop.name}
+            </div>
+            <div style={{ fontFamily: "monospace", fontSize: 10, color: "#475569", marginTop: 2 }}>
+              {stop.stop}
+            </div>
+          </div>
+          <div style={{ fontFamily: "monospace", fontSize: 12, color: "#f97316", fontWeight: 700, flexShrink: 0, marginRight: 6 }}>
+            {stop.dist < 1000 ? `${stop.dist}m` : `${(stop.dist/1000).toFixed(1)}km`}
+          </div>
+          <div style={{ color: "#334155", fontSize: 16, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.25s", flexShrink: 0 }}>
+            ▾
+          </div>
+        </div>
+
+        {/* Departures */}
+        {isOpen && (
+          <div style={{ borderTop: "1px solid #1e293b", padding: "4px 14px 12px" }}>
+            {deps.map((dep, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < deps.length - 1 ? "1px solid #1e293b" : "none" }}>
+                <div style={{ background: "#080d18", border: "1px solid #1e293b", fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: "#00e5ff", padding: "5px 8px", borderRadius: 7, minWidth: 46, textAlign: "center", flexShrink: 0 }}>
+                  {dep.r}
+                </div>
+                <div style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>
+                  {dep.t}
+                </div>
+                <Badge mins={dep.w} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  })}
+
+  <div style={{ textAlign: "center", fontSize: 10, color: "#1e293b", fontFamily: "monospace", marginTop: 20 }}>
+    Based on Colchester timetables · updates every 10s
+  </div>
+</div>
+```
+
+);
+}
